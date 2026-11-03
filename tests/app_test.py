@@ -86,3 +86,13 @@ def test_delete_message(client):
     rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
+
+def test_add_requires_login(client):
+    """Ensure that adding a post requires the user to be logged in, cannot add a post if not logged in"""
+    rv = client.post("/add", data=dict(title="a", text="b"))
+    assert rv.status_code == 401 # Unauthorized
+
+def test_search_page_loads_without_query(client):
+    """Ensure that the search page loads without a query parameter, does not crash"""
+    rv = client.get("/search/")
+    assert rv.status_code == 200
