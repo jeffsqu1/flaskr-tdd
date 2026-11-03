@@ -105,11 +105,15 @@ def delete_entry(post_id):
     """Deletes post from database."""
     result = {"status": 0, "message": "Error"}
     try:
-        new_id = post_id
-        db.session.query(models.Post).filter_by(id=new_id).delete()
+        deleted_count = (
+            db.session.query(models.Post).filter_by(id=post_id).delete()
+        )
         db.session.commit()
-        result = {"status": 1, "message": "Post Deleted"}
-        flash("The entry was deleted.")
+        if deleted_count:
+            result = {"status": 1, "message": "Post Deleted"}
+            flash("The entry was deleted.")
+        else:
+            result = {"status": 0, "message": "Post not found"}
     except Exception as e:
         result = {"status": 0, "message": repr(e)}
     return jsonify(result)
@@ -121,7 +125,7 @@ def search():
     entries = db.session.query(models.Post)
     if query:
         return render_template("search.html", entries=entries, query=query)
-    return render_template("search.html")
+    return render_template("search.html") # empty query
 
 
 if __name__ == "__main__":

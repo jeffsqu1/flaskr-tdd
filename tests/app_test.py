@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from project.app import app, db
+from project.models import Post
 
 TEST_DB = "test.db"
 
@@ -83,6 +84,7 @@ def test_delete_message(client):
     data = json.loads(rv.data)
     assert data["status"] == 0
     login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    client.post("/add", data=dict(title="To delete", text="Temporary post"))
     rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
@@ -96,3 +98,31 @@ def test_search_page_loads_without_query(client):
     """Ensure that the search page loads without a query parameter, does not crash"""
     rv = client.get("/search/")
     assert rv.status_code == 200
+
+
+def test_delete_nonexistent_post(client):
+    """Ensure deleting a nonextistent post returns an error"""
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+
+    response = client.get("/delete/999") # Assuming post id 999 does not exist
+
+    data = json.loads(response.data)
+    assert data["status"] == 0
+
+
+def test_search_shows_relevant(client):
+    """Search results should identify matching posts and omit unrelated posts."""
+    with app.app_context():
+        db.session.add_all( # Test posts to search against
+            [
+                Post("Flask testing", "Useful test techniques"),
+                Post("Deployment notes", "Production configuration"),
+            ]
+        )
+        db.session.commit()
+
+    response = client.get("/search/?query=flask") # should only return "Flask testing"
+
+    assert b'id="1"' in response.data
+    assert b"Flask testing" in response.data
+    assert b"Deployment notes" not in response.data
