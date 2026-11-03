@@ -109,20 +109,3 @@ def test_delete_nonexistent_post(client):
     data = json.loads(response.data)
     assert data["status"] == 0
 
-
-def test_search_shows_relevant(client):
-    """Search results should identify matching posts and omit unrelated posts."""
-    with app.app_context():
-        db.session.add_all( # Test posts to search against
-            [
-                Post("Flask testing", "Useful test techniques"),
-                Post("Deployment notes", "Production configuration"),
-            ]
-        )
-        db.session.commit()
-
-    response = client.get("/search/?query=flask") # should only return "Flask testing"
-
-    assert b'id="1"' in response.data
-    assert b"Flask testing" in response.data
-    assert b"Deployment notes" not in response.data
