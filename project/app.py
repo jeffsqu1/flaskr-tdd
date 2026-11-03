@@ -39,6 +39,9 @@ app.config.from_object(__name__)
 # init sqlalchemy
 db = SQLAlchemy(app)
 
+with app.app_context():
+    db.create_all()
+
 from project import models
 
 
